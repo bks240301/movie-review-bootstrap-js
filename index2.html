@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Review</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background: linear-gradient(to right, #141e30, #243b55);
+    color: white;
+}
+
+.card img {
+    height: 300px;
+    object-fit: cover;
+}
+
+.star {
+    cursor: pointer;
+    font-size: 20px;
+    color: gray;
+}
+.star.active {
+    color: gold;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-dark bg-dark">
+<div class="container-fluid">
+<span class="navbar-brand">🎬 Movie Review</span>
+<input type="text" id="search" class="form-control w-25" placeholder="Search movie...">
+</div>
+</nav>
+
+<div id="carouselExample" class="carousel slide mt-2" data-bs-ride="carousel">
+
+<div class="carousel-indicators">
+<button type="button" data-bs-target="#carouselExample" data-bs-slide-to="0" class="active"></button>
+<button type="button" data-bs-target="#carouselExample" data-bs-slide-to="1"></button>
+<button type="button" data-bs-target="#carouselExample" data-bs-slide-to="2"></button>
+</div>
+
+<div class="carousel-inner">
+<div class="carousel-item active">
+<img src="movie_banner_1.png">
+</div>
+<div class="carousel-item">
+<img src="movie_banner_2.png">
+</div>
+<div class="carousel-item">
+<img src="movie_banner_3.png">
+</div>
+</div>
+
+<button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+<span class="carousel-control-prev-icon"></span>
+</button>
+
+<button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+<span class="carousel-control-next-icon"></span>
+</button>
+
+</div>
+
+
+
+<div class="container mt-4">
+<div class="row" id="movieList"></div>
+</div>
+
+
+<div class="container text-center mt-3">
+<button class="btn btn-light" onclick="prevPage()">Prev</button>
+<span id="pageNumber" class="mx-2"></span>
+<button class="btn btn-light" onclick="nextPage()">Next</button>
+</div>
+
+
+<div class="modal fade" id="reviewModal">
+<div class="modal-dialog">
+<div class="modal-content text-dark">
+
+<div class="modal-header">
+<h5>Add Review</h5>
+<button class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+<form id="reviewForm">
+
+<input type="hidden" id="movieIndex">
+
+<input type="text" id="username" class="form-control mb-2" placeholder="Your Name" required>
+
+<textarea id="reviewText" class="form-control mb-2" placeholder="Your Review" required></textarea>
+
+<div id="stars" class="mb-2">
+<span class="star" data-value="1">★</span>
+<span class="star" data-value="2">★</span>
+<span class="star" data-value="3">★</span>
+<span class="star" data-value="4">★</span>
+<span class="star" data-value="5">★</span>
+</div>
+
+<button class="btn btn-primary w-100">Submit</button>
+
+</form>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="container mt-4">
+<h3>Reviews</h3>
+<ul class="list-group" id="reviewList"></ul>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+let movies = [
+    {name: "Avengers", img: "avengers.webp"},
+    {name: "Batman", img: "batman.jpg"},
+    {name: "Spiderman", img: "spiderman.jpg"},
+    {name: "Iron Man", img: "iron man.webp"},
+    {name: "Hulk", img: "hulk.webp"},
+    {name: "Thor", img: "thor.jpg"}
+];
+
+let filteredMovies = movies;
+let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+let rating = 0;
+
+
+let currentPage = 1;
+let moviesPerPage = 3;
+
+function displayMovies(){
+
+    if(filteredMovies.length === 0){
+        document.getElementById("movieList").innerHTML =
+            "<h4 class='text-center'>No movies found 😢</h4>";
+        document.getElementById("pageNumber").innerText = "";
+        return;
+    }
+
+    let html = "";
+    let start = (currentPage - 1) * moviesPerPage;
+    let end = start + moviesPerPage;
+
+    let paginatedMovies = filteredMovies.slice(start, end);
+
+    paginatedMovies.forEach((m)=>{
+        html += `
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <img src="${m.img}">
+                <div class="card-body text-dark">
+                    <h5>${m.name}</h5>
+                    <button class="btn btn-success" onclick="openModal(${movies.indexOf(m)})">Review</button>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById("movieList").innerHTML = html;
+    setupPagination();
+}
+
+displayMovies();
+
+
+function setupPagination(){
+    document.getElementById("pageNumber").innerText =
+        `Page ${currentPage} of ${Math.ceil(filteredMovies.length / moviesPerPage)}`;
+}
+
+function nextPage(){
+    if(currentPage < Math.ceil(filteredMovies.length / moviesPerPage)){
+        currentPage++;
+        displayMovies();
+    }
+}
+
+function prevPage(){
+    if(currentPage > 1){
+        currentPage--;
+        displayMovies();
+    }
+}
+
+function openModal(i){
+    document.getElementById("movieIndex").value = i;
+    new bootstrap.Modal(document.getElementById("reviewModal")).show();
+}
+
+
+document.querySelectorAll(".star").forEach(star=>{
+    star.addEventListener("click", function(){
+        rating = this.dataset.value;
+        document.querySelectorAll(".star").forEach(s=>s.classList.remove("active"));
+        for(let i=0;i<rating;i++){
+            document.querySelectorAll(".star")[i].classList.add("active");
+        }
+    });
+});
+
+
+document.getElementById("reviewForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let name = document.getElementById("username").value;
+    let text = document.getElementById("reviewText").value;
+    let movie = movies[document.getElementById("movieIndex").value].name;
+
+    reviews.push({name, text, movie, rating});
+    localStorage.setItem("reviews", JSON.stringify(reviews));
+
+    displayReviews();
+    this.reset();
+    rating = 0;
+    document.querySelectorAll(".star").forEach(s=>s.classList.remove("active"));
+});
+
+
+function displayReviews(){
+    let html = "";
+    reviews.forEach(r=>{
+        html += `
+        <li class="list-group-item">
+            <strong>${r.movie}</strong> - ${r.name}<br>
+            ${r.text}<br>
+            Rating: ${"★".repeat(r.rating)}
+        </li>`;
+    });
+    document.getElementById("reviewList").innerHTML = html;
+}
+
+displayReviews();
+
+
+document.getElementById("search").addEventListener("keyup", function(){
+    let value = this.value.toLowerCase();
+
+    filteredMovies = movies.filter(m =>
+        m.name.toLowerCase().includes(value)
+    );
+
+    currentPage = 1;
+    displayMovies();
+});
+
+</script>
+
+</body>
+</html>
